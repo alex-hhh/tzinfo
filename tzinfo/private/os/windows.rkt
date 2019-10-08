@@ -27,10 +27,16 @@
 
 (define (windows->tzid tz)
   (and tz
-       (for*/first ([mz (in-list (windows-zones))]
-                    [win (in-value (cldr-ref mz '(mapZone _other)))]
-                    #:when (equal? tz win))
-         (cldr-ref mz '(mapZone _type)))))
+       (or
+        ;; Look first for the "001" territory (the default)
+        (for/first ([mz (in-list (windows-zones))]
+                    #:when (and (equal? tz (cldr-ref mz '(mapZone _other)))
+                                (equal? "001" (cldr-ref mz '(mapZone _territory)))))
+          (cldr-ref mz '(mapZone _type)))
+        ;; If not found, look for any territory
+        (for/first ([mz (in-list (windows-zones))]
+                    #:when (equal? tz (cldr-ref mz '(mapZone _other))))
+          (cldr-ref mz '(mapZone _type))))))
 
 (define (tzid-from-registry-list prefix)
   (define standard (standard-name))
